@@ -1,0 +1,4 @@
+enum ManualMode {
+  auto,
+  manual,
+}

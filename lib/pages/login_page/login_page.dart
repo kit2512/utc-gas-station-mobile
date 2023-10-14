@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
+import 'package:utc_gas_station/apis/api_services.dart';
+import 'package:utc_gas_station/dependency_injection.dart';
+import 'package:utc_gas_station/helpers/exception_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,9 +14,13 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _hidePassword = false;
   String _username = '';
-  String _password = '';
+  int? _password;
 
-  bool get formValid => _username.isNotEmpty && _password.isNotEmpty;
+  String? errorMessage;
+
+  bool get formValid => _username.isNotEmpty && _password != null;
+
+  final ApiService apiService = getIt<ApiService>();
 
   FormzSubmissionStatus _status = FormzSubmissionStatus.initial;
 
@@ -21,11 +28,19 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _status = FormzSubmissionStatus.inProgress;
     });
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _status = FormzSubmissionStatus.success;
+    final failureOrResponse = await apiService.login(username: _username, password: _password!);
+    failureOrResponse.fold(
+        (l) => {
+              setState(() {
+                _status = FormzSubmissionStatus.failure;
+                errorMessage = getErrorMessage(l);
+              })
+            }, (_) {
+      setState(() {
+        _status = FormzSubmissionStatus.success;
+      });
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     });
-    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override
@@ -55,9 +70,10 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 onChanged: (value) {
                   setState(() {
-                    _password = value;
+                    _password = int.tryParse(value);
                   });
                 },
+                keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
                 obscureText: _hidePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -74,11 +90,25 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16.0),
+              if (_status.isFailure)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    errorMessage ?? '',
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16.0),
               _status.isInProgress
                   ? const CircularProgressIndicator.adaptive()
                   : ElevatedButton(
                       onPressed: formValid ? _login : null,
-                      child: const Text('Login'),
+                      child: const Text(
+                        'Login',
+                      ),
                     ),
             ],
           ),

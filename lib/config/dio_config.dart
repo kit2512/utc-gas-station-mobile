@@ -78,7 +78,5 @@ class DioClient {
 
 
   final Dio _dio = Dio();
-  final Dio _tokenDio = Dio();
-
   Dio get sendRequest => _dio;
 }

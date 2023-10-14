@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
+import 'package:utc_gas_station/apis/api_services.dart';
+import 'package:utc_gas_station/blocs/info_cubit/info_cubit.dart';
+import 'package:utc_gas_station/dependency_injection.dart';
 import 'package:utc_gas_station/enums/manual_mode.dart';
 
 class ManualPage extends StatefulWidget {
@@ -15,7 +18,14 @@ class _ManualPageState extends State<ManualPage> {
   double _amount = 0;
   FormzSubmissionStatus _status = FormzSubmissionStatus.initial;
 
-  bool get formValid => _amount > 0;
+  bool get formValid {
+    if (_mode == ManualMode.auto) {
+      return true;
+    }
+    return _amount > 0;
+  }
+
+  final ApiService apiService = getIt<ApiService>();
 
   void _setAmount(String value) {
     try {
@@ -34,16 +44,29 @@ class _ManualPageState extends State<ManualPage> {
     setState(() {
       _status = FormzSubmissionStatus.inProgress;
     });
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _status = FormzSubmissionStatus.success;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Submitted'),
-      ),
+    final failureOrResponse = await apiService.updateSystem(
+      isAuto: _mode == ManualMode.auto,
+      manual: _amount.toInt(),
     );
-    Navigator.of(context).pop();
+    failureOrResponse.fold((l) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Unable to update system"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }, (r) {
+      setState(() {
+        _status = FormzSubmissionStatus.success;
+      });
+      getIt<InfoCubit>().getInfo();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Submitted'),
+        ),
+      );
+      Navigator.of(context).pop();
+    });
   }
 
   void _setMode(ManualMode? mode) {
@@ -80,23 +103,22 @@ class _ManualPageState extends State<ManualPage> {
               groupValue: _mode,
               onChanged: _setMode,
             ),
-            if (_mode == ManualMode.manual) ...[
+            if (_mode == ManualMode.manual)
               TextFormField(
                 enabled: !_status.isInProgress,
                 onChanged: _setAmount,
                 decoration: const InputDecoration(
                   labelText: 'Enter amount',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
               ),
-              const SizedBox(height: 16.0),
-              _status.isInProgress
-                  ? const CircularProgressIndicator.adaptive()
-                  : ElevatedButton(
-                      onPressed: _amount > 0 ? _submit : null,
-                      child: const Text('Submit'),
-                    ),
-            ]
+            const SizedBox(height: 16.0),
+            _status.isInProgress
+                ? const CircularProgressIndicator.adaptive()
+                : ElevatedButton(
+                    onPressed: formValid ? _submit : null,
+                    child: const Text('Submit'),
+                  ),
           ],
         ),
       ),

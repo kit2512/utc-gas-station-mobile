@@ -80,6 +80,15 @@ class HomePage extends StatelessWidget {
                     label: 'Manual',
                     onTap: () => Navigator.of(context).pushNamed('/manual'),
                   ),
+                  MainMenuCard(
+                    icon: const Icon(
+                      Icons.settings,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                    label: 'Settings',
+                    onTap: () => Navigator.of(context).pushNamed('/settings'),
+                  ),
                 ],
               ),
             ),
@@ -163,7 +172,8 @@ class InfoCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Text('Money: ${state.adminInfo?.money ?? ''}',
+                  Text(
+                    'Money: ${state.adminInfo?.money ?? ''}',
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   IconButton(

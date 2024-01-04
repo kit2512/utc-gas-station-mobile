@@ -79,4 +79,8 @@ class DioClient {
 
   final Dio _dio = Dio();
   Dio get sendRequest => _dio;
+
+  set baseUrl(String url) => _dio.options.baseUrl = url;
+
+  String get baseUrl => _dio.options.baseUrl;
 }

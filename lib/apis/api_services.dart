@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
@@ -12,6 +11,12 @@ class ApiService {
   final DioClient _dioClient;
 
   const ApiService(this._dioClient);
+
+  String get baseUrl => _dioClient.baseUrl;
+
+  set baseUrl (String baseUrl) {
+    _dioClient.baseUrl = baseUrl;
+  }
 
   Future<Either<Failure, bool>> login({required String username, required int password}) async {
     try {
@@ -41,7 +46,6 @@ class ApiService {
         'auto': isAuto ? 1 : 0,
         'manual': manual,
       };
-      print(jsonEncode(data));
       final Response<Map<String, dynamic>> response = await _dioClient.sendRequest.post(
         '/getsystem.php',
         data: data,
@@ -78,7 +82,7 @@ class ApiService {
         '/uploadqr.php',
         data: payload,
       );
-      return Right(true);
+      return const Right(true);
     } on DioException catch (e) {
       final exception = NetworkException.getDioException(e);
       return Left(NetworkFailure(exception));

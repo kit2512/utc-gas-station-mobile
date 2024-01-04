@@ -110,6 +110,10 @@ class _LoginPageState extends State<LoginPage> {
                         'Login',
                       ),
                     ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed('/settings'),
+                child: const Text('Settings'),
+              ),
             ],
           ),
         ),

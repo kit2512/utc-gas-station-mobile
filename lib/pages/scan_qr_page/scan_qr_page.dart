@@ -1,6 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:utc_gas_station/apis/api_services.dart';
 import 'package:utc_gas_station/blocs/info_cubit/info_cubit.dart';
 import 'package:utc_gas_station/dependency_injection.dart';
@@ -35,15 +35,20 @@ class _ScanQRPageState extends State<ScanQRPage> {
           );
           getIt<InfoCubit>().getInfo();
           Navigator.of(context).pop();
-        } else if (value == false){
+        } else {
+          showBottomSheet(
+            context: context,
+            builder: (context) => Container(
+              color: Colors.white,
+              child: Text((value as String?) ?? 'Unknown error'),
+            ),
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text("Invalid QR"),
               backgroundColor: Colors.red,
             ),
           );
-          qrController.start();
-        } else {
           qrController.start();
         }
       });
@@ -87,24 +92,34 @@ class ProcessDialog extends StatefulWidget {
 }
 
 class _ProcessDialogState extends State<ProcessDialog> {
-
   @override
   void initState() {
-    checkQr();
+    if (widget.payload == 'login') {
+      getLogin();
+    } else {
+      checkQr();
+    }
     super.initState();
   }
+
   final ApiService apiService = getIt<ApiService>();
 
   void checkQr() async {
-    final failureOrResponse = await apiService.checkQR(widget.payload);
-    failureOrResponse.fold(
-      (l) {
-        Navigator.of(context).pop(false);
-      },
-      (r) {
-        Navigator.of(context).pop(true);
-      },
-    );
+    try {
+      final failureOrResponse = await apiService.checkQR(widget.payload);
+      Navigator.of(context).pop(true);
+    } on DioException catch (e) {
+      Navigator.of(context).pop(e.error.toString());
+    }
+  }
+
+  void getLogin() async {
+    try {
+      final failureOrResponse = await apiService.getLogin();
+      Navigator.of(context).pop(true);
+    } on DioException catch (e) {
+      Navigator.of(context).pop(e.error.toString());
+    }
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:utc_gas_station/apis/api_services.dart';
 import 'package:utc_gas_station/dependency_injection.dart';
 import 'package:utc_gas_station/helpers/exception_helper.dart';
@@ -38,9 +39,18 @@ class _LoginPageState extends State<LoginPage> {
             }, (_) {
       setState(() {
         _status = FormzSubmissionStatus.success;
+        _prefs.setString('username', _username);
       });
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     });
+  }
+
+  late final SharedPreferences _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((value) => _prefs = value);
   }
 
   @override
